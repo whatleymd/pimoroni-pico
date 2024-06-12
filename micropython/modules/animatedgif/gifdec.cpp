@@ -1,4 +1,4 @@
-#include "AnimatedGIF.h"
+#include "libraries/animatedgif/AnimatedGIF.h"
 #include "micropython/modules/util.hpp"
 #include "libraries/pico_graphics/pico_graphics.hpp"
 

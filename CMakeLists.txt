@@ -40,8 +40,5 @@ add_subdirectory(common)
 add_subdirectory(drivers)
 add_subdirectory(libraries)
 
-# Include the gifdec module
-add_subdirectory(path/to/gifdec)
-
 # Example Pico Pack projects
 add_subdirectory(examples)
