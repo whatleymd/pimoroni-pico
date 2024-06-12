@@ -51,7 +51,7 @@ pulse_loop:
 .wrap
 
 % c-sdk {
-static inline void hub75_row_program_init(PIO pio, uint sm, uint offset, uint row_base_pin, uint n_row_pins, uint latch_base_pin) {
+static inline void hub75_row_program_init(PIO pio, uint sm, uint offset, uint row_base_pin, uint n_row_pins, uint latch_base_pin, float brightness) {
     pio_sm_set_consecutive_pindirs(pio, sm, row_base_pin, n_row_pins, true);
     pio_sm_set_consecutive_pindirs(pio, sm, latch_base_pin, 2, true);
     for (uint i = row_base_pin; i < row_base_pin + n_row_pins; ++i)
@@ -65,6 +65,10 @@ static inline void hub75_row_program_init(PIO pio, uint sm, uint offset, uint ro
     sm_config_set_out_shift(&c, true, true, 32);
     pio_sm_init(pio, sm, offset, &c);
     pio_sm_set_enabled(pio, sm, true);
+
+    // Adjust the pulse width based on brightness
+    uint32_t pulse_width = (uint32_t)((1 << 27) * brightness) - 1;  // Scale pulse width by brightness
+    pio_sm_put_blocking(pio, sm, pulse_width);
 }
 
 static inline void hub75_wait_tx_stall(PIO pio, uint sm) {
