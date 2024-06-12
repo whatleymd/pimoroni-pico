@@ -3,7 +3,7 @@ add_library(usermod_gifdec INTERFACE)
 target_sources(usermod_gifdec INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/gifdec.c
     ${CMAKE_CURRENT_LIST_DIR}/gifdec.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/AnimatedGIF.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/../../../libraries/animatedgif/AnimatedGIF.cpp
 )
 
 target_include_directories(usermod_gifdec INTERFACE
