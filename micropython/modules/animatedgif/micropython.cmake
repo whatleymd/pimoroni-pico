@@ -16,4 +16,4 @@ target_compile_definitions(usermod_gifdec INTERFACE
 
 target_link_libraries(usermod INTERFACE usermod_gifdec)
 
-set_source_files_properties(${CMAKE_CURRENT_LIST_DIR}/AnimatedGIF.cpp PROPERTIES COMPILE_FLAGS "-Wno-error=unused-function")
+set_source_files_properties(${CMAKE_CURRENT_LIST_DIR}/../../../libraries/animatedgif/AnimatedGIF.cpp PROPERTIES COMPILE_FLAGS "-Wno-error=unused-function")
