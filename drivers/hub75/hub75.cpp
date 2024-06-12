@@ -128,7 +128,10 @@ void Hub75::start(irq_handler_t handler) {
             row_prog_offs = pio_add_program(pio, &hub75_row_program);
         }
         hub75_data_rgb888_program_init(pio, sm_data, data_prog_offs, DATA_BASE_PIN, pin_clk);
-        hub75_row_program_init(pio, sm_row, row_prog_offs, ROWSEL_BASE_PIN, ROWSEL_N_PINS, pin_stb);
+
+        float brightness = 0.2f;
+
+        hub75_row_program_init(pio, sm_row, row_prog_offs, ROWSEL_BASE_PIN, ROWSEL_N_PINS, pin_stb, brightness);
 
         // Prevent flicker in Python caused by the smaller dataset just blasting through the PIO too quickly
         pio_sm_set_clkdiv(pio, sm_data, width <= 32 ? 2.0f : 1.0f);
