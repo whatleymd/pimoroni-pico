@@ -71,7 +71,7 @@ int32_t gifdec_seek_callback(GIFFILE *gif, int32_t p) {
     return seek_s.offset;
 }
 
-int GIFDraw(GIFDRAW *pDraw) {
+void GIFDraw(GIFDRAW *pDraw) {
 #ifdef mp_event_handle_nowait
 mp_event_handle_nowait();
 #endif
