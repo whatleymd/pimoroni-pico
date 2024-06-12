@@ -1,25 +1,19 @@
-# The following lines are typical in a CMakeLists.txt or similar CMake build configuration for MicroPython integration
+add_library(usermod_gifdec INTERFACE)
 
-set(GIFDEC_SRC
-    gifdec.c
-    gifdec.cpp
-    AnimatedGIF.cpp
+target_sources(usermod_gifdec INTERFACE
+    ${CMAKE_CURRENT_LIST_DIR}/gifdec.c
+    ${CMAKE_CURRENT_LIST_DIR}/gifdec.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/AnimatedGIF.cpp
 )
 
-set(GIFDEC_HEADERS
-    gifdec.h
-    AnimatedGIF.h
-    gif.inl
+target_include_directories(usermod_gifdec INTERFACE
+    ${CMAKE_CURRENT_LIST_DIR}
 )
 
-# Specify the target for the GIF decoder
-add_library(gifdec STATIC ${GIFDEC_SRC} ${GIFDEC_HEADERS})
+target_compile_definitions(usermod_gifdec INTERFACE
+    MODULE_GIFDEC_ENABLED=1
+)
 
-# Link necessary libraries
-target_link_libraries(gifdec pico_stdlib hardware_pio hardware_dma hardware_interp)
+target_link_libraries(usermod INTERFACE usermod_gifdec)
 
-# Include directories for the GIF decoder
-target_include_directories(gifdec PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-
-# Define the module in MicroPython
-set(MICROPYTHON_EXTRA_C_MODULES ${MICROPYTHON_EXTRA_C_MODULES} ${CMAKE_CURRENT_SOURCE_DIR}/gifdec)
+set_source_files_properties(${CMAKE_CURRENT_LIST_DIR}/AnimatedGIF.cpp PROPERTIES COMPILE_FLAGS "-Wno-error=unused-function")
