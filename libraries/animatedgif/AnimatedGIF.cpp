@@ -19,6 +19,7 @@
 // limitations under the License.
 //===========================================================================
 #include "AnimatedGIF.h"
+#include "pico/stdlib.h"
 
 // Here is all of the actual code...
 #include "gif.inl"
@@ -225,6 +226,16 @@ void AnimatedGIF::reset()
     _gif.iError = GIF_SUCCESS;
     (*_gif.pfnSeek)(&_gif.GIFFile, 0);
 } /* reset() */
+
+// Define millis() function for compatibility
+unsigned long millis() {
+    return to_ms_since_boot(get_absolute_time());
+}
+
+// Define delay() function for compatibility
+void delay(unsigned long ms) {
+    sleep_ms(ms);
+}
 
 void AnimatedGIF::begin(unsigned char ucPaletteType)
 {
