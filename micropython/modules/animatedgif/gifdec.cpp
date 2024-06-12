@@ -71,14 +71,55 @@ int32_t gifdec_seek_callback(GIFFILE *gif, int32_t p) {
     return seek_s.offset;
 }
 
-void GIFDraw(GIFDRAW *pDraw) {
+int GIFDraw(GIFDRAW *pDraw) {
 #ifdef mp_event_handle_nowait
-mp_event_handle_nowait();
+    mp_event_handle_nowait();
 #endif
     PicoGraphics *current_graphics = (PicoGraphics *)pDraw->pUser;
-    // Implement drawing logic for GIF frames here, similar to JPEG example
-    // ...
 
+    if (current_graphics) {
+        for (int y = 0; y < pDraw->iHeight; y++) {
+            for (int x = 0; x < pDraw->iWidth; x++) {
+                if (x >= pDraw->iWidthUsed) break; // Clip to the used width
+                int i = y * pDraw->iWidth + x;
+                RGB565 color = pDraw->pPixels[i];
+
+                if (current_graphics->pen_type == PicoGraphics::PEN_RGB332) {
+                    if (current_flags & FLAG_NO_DITHER) {
+                        current_graphics->set_pen(RGB(color).to_rgb332());
+                        current_graphics->pixel({pDraw->x + x, pDraw->y + y});
+                    } else {
+                        current_graphics->set_pixel_dither({pDraw->x + x, pDraw->y + y}, color);
+                    }
+                } else if (current_graphics->pen_type == PicoGraphics::PEN_RGB888 ||
+                           current_graphics->pen_type == PicoGraphics::PEN_DV_RGB888) {
+                    current_graphics->set_pen(RGB(color).to_rgb888());
+                    current_graphics->pixel({pDraw->x + x, pDraw->y + y});
+                } else if (current_graphics->pen_type == PicoGraphics::PEN_P8 || 
+                           current_graphics->pen_type == PicoGraphics::PEN_P4 || 
+                           current_graphics->pen_type == PicoGraphics::PEN_DV_P5 || 
+                           current_graphics->pen_type == PicoGraphics::PEN_3BIT || 
+                           current_graphics->pen_type == PicoGraphics::PEN_INKY7) {
+                    if (current_flags & FLAG_NO_DITHER) {
+                        int closest = RGB(color).closest(current_graphics->get_palette(), current_graphics->get_palette_size());
+                        if (closest == -1) {
+                            closest = 0;
+                        }
+                        current_graphics->set_pen(closest);
+                        current_graphics->pixel({pDraw->x + x, pDraw->y + y});
+                    } else {
+                        current_graphics->set_pixel_dither({pDraw->x + x, pDraw->y + y}, RGB(color));
+                    }
+                } else if (current_graphics->pen_type == PicoGraphics::PEN_DV_RGB555) {
+                    current_graphics->set_pen(RGB(color).to_rgb555());
+                    current_graphics->pixel({pDraw->x + x, pDraw->y + y});
+                } else {
+                    current_graphics->set_pen(pDraw->pPixels[i]);
+                    current_graphics->pixel({pDraw->x + x, pDraw->y + y});
+                }
+            }
+        }
+    }
     return 1;
 }
 
