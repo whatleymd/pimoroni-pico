@@ -18,6 +18,7 @@ include(picographics/micropython)
 
 # Pico Graphics Extra
 include(jpegdec/micropython)
+include(animatedgif/micropython)
 include(qrcode/micropython/micropython)
 
 # Sensors & Breakouts
