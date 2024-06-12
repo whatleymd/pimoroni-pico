@@ -22,7 +22,7 @@
 .wrap_target
     out pins, 5 [1]    side 0x2 ; Deassert OEn, output row select
     out x, 27   [7]    side 0x3 ; Pulse LATCH, get OEn pulse width
-    mov y, !x   ; Invert x to get the number of cycles to wait
+    mov y, !x          side 0x2; Invert x to get the number of cycles to wait
 pulse_loop:
     jmp y-- pulse_loop side 0x0 ; Assert OEn for y+1 cycles
 .wrap
@@ -45,7 +45,7 @@ pulse_loop:
 .wrap_target
     out pins, 5 [1]    side 0x3 ; Deassert OEn, output row select
     out x, 27   [7]    side 0x2 ; Pulse LATCH, get OEn pulse width
-    mov y, !x   ; Invert x to get the number of cycles to wait
+    mov y, !x          side 0x3; Invert x to get the number of cycles to wait
 pulse_loop:
     jmp y-- pulse_loop side 0x1 ; Assert OEn for x+1 cycles
 .wrap
