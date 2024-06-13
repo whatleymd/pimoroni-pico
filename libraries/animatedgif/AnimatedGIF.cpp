@@ -305,5 +305,5 @@ long lTime = millis();
 } /* playFrame() */
 
 int AnimatedGIF::getFrameCount() {
-    return GIF_getFrameCount(&_gif);
+    return GIF_getFrameCount(&gif);
 }

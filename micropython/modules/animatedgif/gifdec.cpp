@@ -1,12 +1,11 @@
-#include "libraries/animatedgif/AnimatedGIF.h"
-#include "micropython/modules/util.hpp"
-#include "libraries/pico_graphics/pico_graphics.hpp"
+#include "AnimatedGIF.h"
+#include "gifdec.h"
+#include "picographics.h"
+#include "util.hpp"
 
 using namespace pimoroni;
 
 extern "C" {
-#include "gifdec.h"
-#include "micropython/modules/picographics/picographics.h"
 #include "py/stream.h"
 #include "py/reader.h"
 #include "extmod/vfs.h"
@@ -287,4 +286,3 @@ const mp_obj_type_t GIF_type = {
 };
 
 }
-
