@@ -28,7 +28,7 @@ typedef struct _GIF_obj_t {
     int width;
     int height;
     int loop_count;
-    int frame_count;  // Add frame_count
+    int frame_count;
 } _GIF_obj_t;
 
 uint8_t gif_current_flags = 0;
@@ -184,12 +184,9 @@ mp_obj_t _GIF_openRAM(mp_obj_t self_in, mp_obj_t buffer) {
 
 // MicroPython binding for decoding a GIF frame
 mp_obj_t _GIF_decode(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
-    enum { ARG_self, ARG_x, ARG_y, ARG_scale, ARG_dither };
+    enum { ARG_self, ARG_dither };
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_OBJ },
-        { MP_QSTR_x, MP_ARG_INT, {.u_int = 0}  },
-        { MP_QSTR_y, MP_ARG_INT, {.u_int = 0}  },
-        { MP_QSTR_scale, MP_ARG_INT, {.u_int = 0} },
         { MP_QSTR_dither, MP_ARG_OBJ, {.u_obj = mp_const_true} },
     };
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
@@ -257,10 +254,10 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_KW(_GIF_playFrame_obj, 1, _GIF_playFrame);
 STATIC const mp_rom_map_elem_t GIF_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_openFILE), MP_ROM_PTR(&_GIF_openFILE_obj) },
     { MP_ROM_QSTR(MP_QSTR_openRAM), MP_ROM_PTR(&_GIF_openRAM_obj) },
-    { MP_ROM_QSTR_del), MP_ROM_PTR(&_GIF_del_obj) },
+    { MP_ROM_QSTR(MP_QSTR_del), MP_ROM_PTR(&_GIF_del_obj) },
     { MP_ROM_QSTR(MP_QSTR_decode), MP_ROM_PTR(&_GIF_decode_obj) },
     { MP_ROM_QSTR(MP_QSTR_getWidth), MP_ROM_PTR(&_GIF_getWidth_obj) },
-    { MP_ROM_QSTR_getHeight), MP_ROM_PTR(&_GIF_getHeight_obj) },
+    { MP_ROM_QSTR(MP_QSTR_getHeight), MP_ROM_PTR(&_GIF_getHeight_obj) },
     { MP_ROM_QSTR(MP_QSTR_getLoopCount), MP_ROM_PTR(&_GIF_getLoopCount_obj) },
     { MP_ROM_QSTR(MP_QSTR_getFrameCount), MP_ROM_PTR(&_GIF_getFrameCount_obj) },
     { MP_ROM_QSTR(MP_QSTR_playFrame), MP_ROM_PTR(&_GIF_playFrame_obj) },
