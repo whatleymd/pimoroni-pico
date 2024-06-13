@@ -1,4 +1,4 @@
-#include "AnimatedGIF.h"
+#include "libraries/animatedgif/AnimatedGIF.h"
 #include "gifdec.h"
 #include "picographics.h"
 #include "util.hpp"
