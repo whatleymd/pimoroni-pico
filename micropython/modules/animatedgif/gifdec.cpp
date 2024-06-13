@@ -71,7 +71,8 @@ int32_t gifdec_seek_callback(GIFFILE *gif, int32_t p) {
     return seek_s.offset;
 }
 
-int GIFDraw(GIFDRAW *pDraw) {
+// Define the GIFDraw function with the correct return type
+void GIFDraw(GIFDRAW *pDraw) {
 #ifdef mp_event_handle_nowait
     mp_event_handle_nowait();
 #endif
@@ -80,21 +81,20 @@ int GIFDraw(GIFDRAW *pDraw) {
     if (current_graphics) {
         for (int y = 0; y < pDraw->iHeight; y++) {
             for (int x = 0; x < pDraw->iWidth; x++) {
-                if (x >= pDraw->iWidthUsed) break; // Clip to the used width
                 int i = y * pDraw->iWidth + x;
                 RGB565 color = pDraw->pPixels[i];
 
                 if (current_graphics->pen_type == PicoGraphics::PEN_RGB332) {
                     if (current_flags & FLAG_NO_DITHER) {
                         current_graphics->set_pen(RGB(color).to_rgb332());
-                        current_graphics->pixel({pDraw->x + x, pDraw->y + y});
+                        current_graphics->pixel(Point(pDraw->x + x, pDraw->y + y));
                     } else {
-                        current_graphics->set_pixel_dither({pDraw->x + x, pDraw->y + y}, color);
+                        current_graphics->set_pixel_dither(Point(pDraw->x + x, pDraw->y + y), color);
                     }
                 } else if (current_graphics->pen_type == PicoGraphics::PEN_RGB888 ||
                            current_graphics->pen_type == PicoGraphics::PEN_DV_RGB888) {
                     current_graphics->set_pen(RGB(color).to_rgb888());
-                    current_graphics->pixel({pDraw->x + x, pDraw->y + y});
+                    current_graphics->pixel(Point(pDraw->x + x, pDraw->y + y));
                 } else if (current_graphics->pen_type == PicoGraphics::PEN_P8 || 
                            current_graphics->pen_type == PicoGraphics::PEN_P4 || 
                            current_graphics->pen_type == PicoGraphics::PEN_DV_P5 || 
@@ -106,21 +106,20 @@ int GIFDraw(GIFDRAW *pDraw) {
                             closest = 0;
                         }
                         current_graphics->set_pen(closest);
-                        current_graphics->pixel({pDraw->x + x, pDraw->y + y});
+                        current_graphics->pixel(Point(pDraw->x + x, pDraw->y + y));
                     } else {
-                        current_graphics->set_pixel_dither({pDraw->x + x, pDraw->y + y}, RGB(color));
+                        current_graphics->set_pixel_dither(Point(pDraw->x + x, pDraw->y + y), RGB(color));
                     }
                 } else if (current_graphics->pen_type == PicoGraphics::PEN_DV_RGB555) {
                     current_graphics->set_pen(RGB(color).to_rgb555());
-                    current_graphics->pixel({pDraw->x + x, pDraw->y + y});
+                    current_graphics->pixel(Point(pDraw->x + x, pDraw->y + y));
                 } else {
                     current_graphics->set_pen(pDraw->pPixels[i]);
-                    current_graphics->pixel({pDraw->x + x, pDraw->y + y});
+                    current_graphics->pixel(Point(pDraw->x + x, pDraw->y + y));
                 }
             }
         }
     }
-    return 1;
 }
 
 // Helper function to open GIF
@@ -195,9 +194,6 @@ mp_obj_t _GIF_decode(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
     _GIF_obj_t *self = MP_OBJ_TO_PTR2(args[ARG_self].u_obj, _GIF_obj_t);
-    int x = args[ARG_x].u_int;
-    int y = args[ARG_y].u_int;
-    int scale = args[ARG_scale].u_int;
     current_flags = args[ARG_dither].u_obj == mp_const_false ? FLAG_NO_DITHER : 0;
     gifdec_open_helper(self);
     self->gif->playFrame(true, NULL, self->graphics->graphics);
