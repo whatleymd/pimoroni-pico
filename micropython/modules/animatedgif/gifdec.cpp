@@ -135,7 +135,7 @@ void gifdec_open_helper(_GIF_obj_t *self) {
         result = self->gif->open((uint8_t *)self->buf.buf, self->buf.len, (void(*)(GIFDRAW*))GIFDraw);
     }
     if(result != 1) mp_raise_msg(&mp_type_RuntimeError, "GIF: could not read file/buffer.");
-    // self->frame_count = self->gif->getFrameCount();  // Uncomment or implement if available
+    self->frame_count = self->gif->getFrameCount();
 }
 
 // MicroPython binding for creating a new GIF object
@@ -184,65 +184,76 @@ mp_obj_t _GIF_openRAM(mp_obj_t self_in, mp_obj_t buffer) {
     return mp_const_true;
 }
 
-// MicroPython binding for decoding a GIF frame
-mp_obj_t _GIF_decode(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
-    enum { ARG_self, ARG_dither };
+// MicroPython binding for decoding a GIF
+mp_obj_t _GIF_decode(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args) {
+    enum { ARG_self, ARG_x, ARG_y, ARG_scale, ARG_dither };
     static const mp_arg_t allowed_args[] = {
-        { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_OBJ },
-        { MP_QSTR_dither, MP_ARG_OBJ, {.u_obj = mp_const_true} },
+        { MP_QSTR_self, MP_ARG_REQUIRED | MP_ARG_OBJ },
+        { MP_QSTR_x, MP_ARG_INT, {.u_int = 0} },
+        { MP_QSTR_y, MP_ARG_INT, {.u_int = 0} },
+        { MP_QSTR_scale, MP_ARG_INT, {.u_int = 1} },
+        { MP_QSTR_dither, MP_ARG_BOOL, {.u_bool = true} }
     };
-    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
-    mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
-    _GIF_obj_t *self = MP_OBJ_TO_PTR2(args[ARG_self].u_obj, _GIF_obj_t);
-    gif_current_flags = args[ARG_dither].u_obj == mp_const_false ? FLAG_NO_DITHER : 0;
-    gifdec_open_helper(self);
-    self->gif->playFrame(true, NULL, self->graphics->graphics);
-    gif_current_flags = 0;
+    mp_arg_val_t parsed_args[MP_ARRAY_SIZE(allowed_args)];
+    mp_arg_parse_all(n_args, args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, parsed_args);
+    _GIF_obj_t *self = MP_OBJ_TO_PTR2(parsed_args[ARG_self].u_obj, _GIF_obj_t);
+    int x = parsed_args[ARG_x].u_int;
+    int y = parsed_args[ARG_y].u_int;
+    int scale = parsed_args[ARG_scale].u_int;
+    gif_current_flags = (parsed_args[ARG_dither].u_bool) ? 0 : FLAG_NO_DITHER;
+    self->graphics->graphics->set_clip(x, y, self->width * scale, self->height * scale);
+    self->graphics->graphics->remove_clip();
+    if (!self->gif->open((uint8_t *)self->buf.buf, self->buf.len, (void(*)(GIFDRAW*))GIFDraw)) {
+        mp_raise_ValueError("Failed to open GIF");
+    }
+    self->gif->reset();
+    while(self->gif->playFrame() == 1) {
+        mp_handle_pending(true);
+    }
     self->gif->close();
-    return mp_const_true;
+    return mp_const_none;
 }
 
-// MicroPython binding for getting the width of a GIF
+// MicroPython binding for getting the GIF width
 mp_obj_t _GIF_getWidth(mp_obj_t self_in) {
     _GIF_obj_t *self = MP_OBJ_TO_PTR2(self_in, _GIF_obj_t);
     return mp_obj_new_int(self->width);
 }
 
-// MicroPython binding for getting the height of a GIF
+// MicroPython binding for getting the GIF height
 mp_obj_t _GIF_getHeight(mp_obj_t self_in) {
     _GIF_obj_t *self = MP_OBJ_TO_PTR2(self_in, _GIF_obj_t);
     return mp_obj_new_int(self->height);
 }
 
-// MicroPython binding for getting the loop count of a GIF
+// MicroPython binding for getting the GIF loop count
 mp_obj_t _GIF_getLoopCount(mp_obj_t self_in) {
     _GIF_obj_t *self = MP_OBJ_TO_PTR2(self_in, _GIF_obj_t);
     return mp_obj_new_int(self->loop_count);
 }
 
-// MicroPython binding for getting the frame count of a GIF
+// MicroPython binding for getting the GIF frame count
 mp_obj_t _GIF_getFrameCount(mp_obj_t self_in) {
     _GIF_obj_t *self = MP_OBJ_TO_PTR2(self_in, _GIF_obj_t);
     return mp_obj_new_int(self->frame_count);
 }
 
 // MicroPython binding for playing a GIF frame
-mp_obj_t _GIF_playFrame(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
-    enum { ARG_self, ARG_sync };
+mp_obj_t _GIF_playFrame(size_t n_args, const mp_obj_t *args, mp_map_t *kw_args) {
+    enum { ARG_self, ARG_delay };
     static const mp_arg_t allowed_args[] = {
-        { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_OBJ },
-        { MP_QSTR_sync, MP_ARG_OBJ, {.u_obj = mp_const_true} },
+        { MP_QSTR_self, MP_ARG_REQUIRED | MP_ARG_OBJ },
+        { MP_QSTR_delay, MP_ARG_INT, {.u_int = 0} },
     };
-    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
-    mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
-    _GIF_obj_t *self = MP_OBJ_TO_PTR2(args[ARG_self].u_obj, _GIF_obj_t);
-    bool sync = args[ARG_sync].u_obj == mp_const_true;
-    int delayMilliseconds;
-    int result = self->gif->playFrame(sync, &delayMilliseconds, self->graphics->graphics);
-    return mp_obj_new_int(result);
+    mp_arg_val_t parsed_args[MP_ARRAY_SIZE(allowed_args)];
+    mp_arg_parse_all(n_args, args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, parsed_args);
+    _GIF_obj_t *self = MP_OBJ_TO_PTR2(parsed_args[ARG_self].u_obj, _GIF_obj_t);
+    int delay = parsed_args[ARG_delay].u_int;
+    int result = self->gif->playFrame(&delay);
+    return mp_obj_new_bool(result);
 }
 
-// Register the functions and constants to MicroPython
+// Register the MicroPython methods
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(_GIF_openFILE_obj, _GIF_openFILE);
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(_GIF_openRAM_obj, _GIF_openRAM);
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(_GIF_del_obj, _GIF_del);
@@ -270,8 +281,10 @@ STATIC MP_DEFINE_CONST_DICT(GIF_locals_dict, GIF_locals_dict_table);
 const mp_obj_type_t GIF_type = {
     { &mp_type_type },
     .name = MP_QSTR_GIF,
+    .print = NULL,
     .make_new = _GIF_make_new,
     .locals_dict = (mp_obj_dict_t *)&GIF_locals_dict,
 };
 
 }
+
