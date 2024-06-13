@@ -728,6 +728,12 @@ gifpagesz:
 // returns 1 to signify more data available for this image
 // 0 indicates there is no more data
 //
+
+int GIF_getFrameCount(GIFIMAGE *pGIF) {
+    return pGIF->iFrameCount;
+}
+
+
 static int GIFGetMoreData(GIFIMAGE *pPage)
 {
     int iDelta = (pPage->iLZWSize - pPage->iLZWOff);

@@ -230,6 +230,7 @@ class AnimatedGIF
     int getInfo(GIFINFO *pInfo);
     int getLastError();
     int getComment(char *destBuffer);
+    int AnimatedGIF::getFrameCount();
 
   private:
     GIFIMAGE _gif;
@@ -248,6 +249,7 @@ class AnimatedGIF
     int GIF_getInfo(GIFIMAGE *pGIF, GIFINFO *pInfo);
     int GIF_getLastError(GIFIMAGE *pGIF);
     int GIF_getLoopCount(GIFIMAGE *pGIF);
+    int GIF_getFrameCount(GIFIMAGE *pGIF);
 #endif // __cplusplus
 
 #if (INTPTR_MAX == INT64_MAX)

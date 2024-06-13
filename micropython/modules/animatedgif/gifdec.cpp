@@ -11,6 +11,8 @@ extern "C" {
 #include "py/reader.h"
 #include "extmod/vfs.h"
 
+#define STATIC static
+
 typedef struct _ModPicoGraphics_obj_t {
     mp_obj_base_t base;
     PicoGraphics *graphics;
@@ -133,7 +135,7 @@ void gifdec_open_helper(_GIF_obj_t *self) {
         result = self->gif->open((uint8_t *)self->buf.buf, self->buf.len, (void(*)(GIFDRAW*))GIFDraw);
     }
     if(result != 1) mp_raise_msg(&mp_type_RuntimeError, "GIF: could not read file/buffer.");
-    self->frame_count = self->gif->getFrameCount();  // Set frame_count
+    // self->frame_count = self->gif->getFrameCount();  // Uncomment or implement if available
 }
 
 // MicroPython binding for creating a new GIF object
@@ -254,7 +256,7 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_KW(_GIF_playFrame_obj, 1, _GIF_playFrame);
 STATIC const mp_rom_map_elem_t GIF_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_openFILE), MP_ROM_PTR(&_GIF_openFILE_obj) },
     { MP_ROM_QSTR(MP_QSTR_openRAM), MP_ROM_PTR(&_GIF_openRAM_obj) },
-    { MP_ROM_QSTR(MP_QSTR_del), MP_ROM_PTR(&_GIF_del_obj) },
+    { MP_ROM_QSTR(del), MP_ROM_PTR(&_GIF_del_obj) },
     { MP_ROM_QSTR(MP_QSTR_decode), MP_ROM_PTR(&_GIF_decode_obj) },
     { MP_ROM_QSTR(MP_QSTR_getWidth), MP_ROM_PTR(&_GIF_getWidth_obj) },
     { MP_ROM_QSTR(MP_QSTR_getHeight), MP_ROM_PTR(&_GIF_getHeight_obj) },
