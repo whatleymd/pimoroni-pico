@@ -1,7 +1,7 @@
 #include "libraries/animatedgif/AnimatedGIF.h"
 #include "gifdec.h"
-#include "picographics.h"
-#include "util.hpp"
+#include "libraries/pico_graphics/pico_graphics.hpp"
+#include "micropython/modules/util.hpp"
 
 using namespace pimoroni;
 
