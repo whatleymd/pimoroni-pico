@@ -11,6 +11,8 @@ extern "C" {
 #include "py/reader.h"
 #include "extmod/vfs.h"
 
+#define STATIC static
+
 typedef struct _ModPicoGraphics_obj_t {
     mp_obj_base_t base;
     PicoGraphics *graphics;
@@ -31,7 +33,7 @@ typedef struct _GIF_obj_t {
     int frame_count;
 } _GIF_obj_t;
 
-uint8_t current_flags = 0;
+uint8_t gif_current_flags = 0;
 
 enum FLAGS : uint8_t {
     FLAG_NO_DITHER = 1u
@@ -72,7 +74,7 @@ int32_t gifdec_seek_callback(GIFFILE *gif, int32_t p) {
     return seek_s.offset;
 }
 
-int GIFDraw(GIFDRAW *pDraw) {
+void GIFDraw(GIFDRAW *pDraw) {
 #ifdef mp_event_handle_nowait
     mp_event_handle_nowait();
 #endif
@@ -85,42 +87,41 @@ int GIFDraw(GIFDRAW *pDraw) {
                 RGB565 color = pDraw->pPixels[i];
 
                 if (current_graphics->pen_type == PicoGraphics::PEN_RGB332) {
-                    if (current_flags & FLAG_NO_DITHER) {
+                    if (gif_current_flags & FLAG_NO_DITHER) {
                         current_graphics->set_pen(RGB(color).to_rgb332());
-                        current_graphics->pixel({pDraw->iX + x, pDraw->iY + y});
+                        current_graphics->pixel(Point(pDraw->iX + x, pDraw->iY + y));
                     } else {
-                        current_graphics->set_pixel_dither({pDraw->iX + x, pDraw->iY + y}, color);
+                        current_graphics->set_pixel_dither(Point(pDraw->iX + x, pDraw->iY + y), color);
                     }
                 } else if (current_graphics->pen_type == PicoGraphics::PEN_RGB888 ||
                            current_graphics->pen_type == PicoGraphics::PEN_DV_RGB888) {
                     current_graphics->set_pen(RGB(color).to_rgb888());
-                    current_graphics->pixel({pDraw->iX + x, pDraw->iY + y});
+                    current_graphics->pixel(Point(pDraw->iX + x, pDraw->iY + y));
                 } else if (current_graphics->pen_type == PicoGraphics::PEN_P8 || 
                            current_graphics->pen_type == PicoGraphics::PEN_P4 || 
                            current_graphics->pen_type == PicoGraphics::PEN_DV_P5 || 
                            current_graphics->pen_type == PicoGraphics::PEN_3BIT || 
                            current_graphics->pen_type == PicoGraphics::PEN_INKY7) {
-                    if (current_flags & FLAG_NO_DITHER) {
+                    if (gif_current_flags & FLAG_NO_DITHER) {
                         int closest = RGB(color).closest(current_graphics->get_palette(), current_graphics->get_palette_size());
                         if (closest == -1) {
                             closest = 0;
                         }
                         current_graphics->set_pen(closest);
-                        current_graphics->pixel({pDraw->iX + x, pDraw->iY + y});
+                        current_graphics->pixel(Point(pDraw->iX + x, pDraw->iY + y));
                     } else {
-                        current_graphics->set_pixel_dither({pDraw->iX + x, pDraw->iY + y}, RGB(color));
+                        current_graphics->set_pixel_dither(Point(pDraw->iX + x, pDraw->iY + y), RGB(color));
                     }
                 } else if (current_graphics->pen_type == PicoGraphics::PEN_DV_RGB555) {
                     current_graphics->set_pen(RGB(color).to_rgb555());
-                    current_graphics->pixel({pDraw->iX + x, pDraw->iY + y});
+                    current_graphics->pixel(Point(pDraw->iX + x, pDraw->iY + y));
                 } else {
                     current_graphics->set_pen(pDraw->pPixels[i]);
-                    current_graphics->pixel({pDraw->iX + x, pDraw->iY + y});
+                    current_graphics->pixel(Point(pDraw->iX + x, pDraw->iY + y));
                 }
             }
         }
     }
-    return 1;
 }
 
 // Helper function to open GIF
@@ -128,13 +129,13 @@ void gifdec_open_helper(_GIF_obj_t *self) {
     int result = -1;
     if(mp_obj_is_str(self->file)){
         GET_STR_DATA_LEN(self->file, str, str_len);
-        result = self->gif->open((const char*)str, gifdec_open_callback, gifdec_close_callback, gifdec_read_callback, gifdec_seek_callback, GIFDraw);
+        result = self->gif->open((const char*)str, gifdec_open_callback, gifdec_close_callback, gifdec_read_callback, gifdec_seek_callback, (void(*)(GIFDRAW*))GIFDraw);
     } else {
         mp_get_buffer_raise(self->file, &self->buf, MP_BUFFER_READ);
-        result = self->gif->open((uint8_t *)self->buf.buf, self->buf.len, GIFDraw);
+        result = self->gif->open((uint8_t *)self->buf.buf, self->buf.len, (void(*)(GIFDRAW*))GIFDraw);
     }
     if(result != 1) mp_raise_msg(&mp_type_RuntimeError, "GIF: could not read file/buffer.");
-    self->frame_count = self->gif->getFrameCount();  // Set frame_count
+    // self->frame_count = self->gif->getFrameCount();  // Uncomment or implement if available
 }
 
 // MicroPython binding for creating a new GIF object
@@ -185,24 +186,18 @@ mp_obj_t _GIF_openRAM(mp_obj_t self_in, mp_obj_t buffer) {
 
 // MicroPython binding for decoding a GIF frame
 mp_obj_t _GIF_decode(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
-    enum { ARG_self, ARG_x, ARG_y, ARG_scale, ARG_dither };
+    enum { ARG_self, ARG_dither };
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_OBJ },
-        { MP_QSTR_x, MP_ARG_INT, {.u_int = 0}  },
-        { MP_QSTR_y, MP_ARG_INT, {.u_int = 0}  },
-        { MP_QSTR_scale, MP_ARG_INT, {.u_int = 0} },
         { MP_QSTR_dither, MP_ARG_OBJ, {.u_obj = mp_const_true} },
     };
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
     _GIF_obj_t *self = MP_OBJ_TO_PTR2(args[ARG_self].u_obj, _GIF_obj_t);
-    int x = args[ARG_x].u_int;
-    int y = args[ARG_y].u_int;
-    int scale = args[ARG_scale].u_int;
-    current_flags = args[ARG_dither].u_obj == mp_const_false ? FLAG_NO_DITHER : 0;
+    gif_current_flags = args[ARG_dither].u_obj == mp_const_false ? FLAG_NO_DITHER : 0;
     gifdec_open_helper(self);
     self->gif->playFrame(true, NULL, self->graphics->graphics);
-    current_flags = 0;
+    gif_current_flags = 0;
     self->gif->close();
     return mp_const_true;
 }
@@ -247,18 +242,17 @@ mp_obj_t _GIF_playFrame(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_ar
     return mp_obj_new_int(result);
 }
 
-// Define the constants for the functions
-MP_DEFINE_CONST_FUN_OBJ_2(_GIF_openFILE_obj, _GIF_openFILE);
-MP_DEFINE_CONST_FUN_OBJ_2(_GIF_openRAM_obj, _GIF_openRAM);
-MP_DEFINE_CONST_FUN_OBJ_2(_GIF_del_obj, _GIF_del);
-MP_DEFINE_CONST_FUN_OBJ_KW(_GIF_decode_obj, 1, _GIF_decode);
-MP_DEFINE_CONST_FUN_OBJ_1(_GIF_getWidth_obj, _GIF_getWidth);
-MP_DEFINE_CONST_FUN_OBJ_1(_GIF_getHeight_obj, _GIF_getHeight);
-MP_DEFINE_CONST_FUN_OBJ_1(_GIF_getLoopCount_obj, _GIF_getLoopCount);
-MP_DEFINE_CONST_FUN_OBJ_1(_GIF_getFrameCount_obj, _GIF_getFrameCount);
-MP_DEFINE_CONST_FUN_OBJ_KW(_GIF_playFrame_obj, 1, _GIF_playFrame);
+// Register the functions and constants to MicroPython
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(_GIF_openFILE_obj, _GIF_openFILE);
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(_GIF_openRAM_obj, _GIF_openRAM);
+STATIC MP_DEFINE_CONST_FUN_OBJ_2(_GIF_del_obj, _GIF_del);
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(_GIF_decode_obj, 1, _GIF_decode);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(_GIF_getWidth_obj, _GIF_getWidth);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(_GIF_getHeight_obj, _GIF_getHeight);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(_GIF_getLoopCount_obj, _GIF_getLoopCount);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(_GIF_getFrameCount_obj, _GIF_getFrameCount);
+STATIC MP_DEFINE_CONST_FUN_OBJ_KW(_GIF_playFrame_obj, 1, _GIF_playFrame);
 
-// Define the dictionary of the GIF locals
 STATIC const mp_rom_map_elem_t GIF_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_openFILE), MP_ROM_PTR(&_GIF_openFILE_obj) },
     { MP_ROM_QSTR(MP_QSTR_openRAM), MP_ROM_PTR(&_GIF_openRAM_obj) },
@@ -273,12 +267,11 @@ STATIC const mp_rom_map_elem_t GIF_locals_dict_table[] = {
 
 STATIC MP_DEFINE_CONST_DICT(GIF_locals_dict, GIF_locals_dict_table);
 
-// Define the type of the GIF object
 const mp_obj_type_t GIF_type = {
     { &mp_type_type },
-    .name = MP_QSTR_gifdec,
-    .print = NULL,
+    .name = MP_QSTR_GIF,
     .make_new = _GIF_make_new,
     .locals_dict = (mp_obj_dict_t *)&GIF_locals_dict,
 };
+
 }
