@@ -172,6 +172,7 @@ typedef struct gif_image_tag
     uint16_t iFrameDelay; // delay in milliseconds for this frame
     uint16_t iRepeatCount; // NETSCAPE animation repeat count. 0=forever
     uint16_t iXCount, iYCount; // decoding position in image (countdown values)
+    int iFrameCount;
     int iLZWOff; // current LZW data offset
     int iLZWSize; // current quantity of data in the LZW buffer
     int iCommentPos; // file offset of start of comment data
@@ -230,7 +231,7 @@ class AnimatedGIF
     int getInfo(GIFINFO *pInfo);
     int getLastError();
     int getComment(char *destBuffer);
-    int AnimatedGIF::getFrameCount();
+    int getFrameCount();
 
   private:
     GIFIMAGE _gif;
