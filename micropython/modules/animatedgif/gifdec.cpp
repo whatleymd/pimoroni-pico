@@ -30,7 +30,6 @@ typedef struct _GIF_obj_t {
     int loop_count;
 } _GIF_obj_t;
 
-uint8_t current_flags = 0;
 
 enum FLAGS : uint8_t {
     FLAG_NO_DITHER = 1u
