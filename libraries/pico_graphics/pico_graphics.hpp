@@ -1,6 +1,6 @@
 #pragma once
 
-#include <string>
+#include <string.h>
 #include <string_view>
 #include <array>
 #include <cstdint>
