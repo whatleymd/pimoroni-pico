@@ -10,3 +10,5 @@ target_include_directories(hub75 INTERFACE ${CMAKE_CURRENT_LIST_DIR})
 # Pull in pico libraries that we need
 target_link_libraries(hub75 INTERFACE pico_stdlib hardware_pio hardware_dma pico_graphics)
 
+# Set the C++ standard to C++17
+target_compile_features(hub75 INTERFACE cxx_std_17)
