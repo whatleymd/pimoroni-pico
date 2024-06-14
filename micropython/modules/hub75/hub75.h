@@ -2,8 +2,6 @@
 #include "py/runtime.h"
 #include "py/objstr.h"
 
-#include "drivers/hub75/hub75.hpp"
-
 /***** Extern of Class Definition *****/
 extern const mp_obj_type_t Hub75_type;
 
