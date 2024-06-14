@@ -10,6 +10,13 @@ MP_DEFINE_CONST_FUN_OBJ_2(Hub75_update_obj, Hub75_update);
 
 MP_DEFINE_CONST_FUN_OBJ_2(Hub75_set_brightness_obj, Hub75_set_brightness);
 
+mp_obj_t Hub75_set_brightness(mp_obj_t self_in, mp_obj_t brightness) {
+    _Hub75_obj_t *self = MP_OBJ_TO_PTR2(self_in, _Hub75_obj_t);
+    float brightness_value = mp_obj_get_float(brightness);
+    self->hub75->set_brightness(brightness_value);
+    return mp_const_none;
+}
+
 /***** Binding of Methods *****/
 static const mp_rom_map_elem_t Hub75_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR___del__), MP_ROM_PTR(&Hub75___del___obj) },
