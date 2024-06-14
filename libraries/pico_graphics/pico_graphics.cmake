@@ -23,3 +23,6 @@ add_library(pico_graphics
 target_include_directories(pico_graphics INTERFACE ${CMAKE_CURRENT_LIST_DIR})
 
 target_link_libraries(pico_graphics bitmap_fonts hershey_fonts pico_stdlib)
+
+# Set the C++ standard to C++17
+target_compile_features(pico_graphics INTERFACE cxx_std_17)
