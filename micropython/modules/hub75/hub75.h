@@ -14,11 +14,11 @@ extern mp_obj_t Hub75_stop(mp_obj_t self_in);
 extern mp_obj_t Hub75_set_pixel(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args);
 extern mp_obj_t Hub75_clear(mp_obj_t self_in);
 extern mp_obj_t Hub75_update(mp_obj_t self_in, mp_obj_t graphics_in);
-extern mp_obj_t Hub75_set_brightness(mp_obj_t self_in, mp_obj_t brightness_in);  // Add this line
+extern mp_obj_t Hub75_set_brightness(mp_obj_t self_in, mp_obj_t brightness_in);
 
 // Definition of _Hub75_obj_t
 typedef struct _Hub75_obj_t {
     mp_obj_base_t base;
-    pimoroni::Hub75* hub75;  // Use the forward-declared class
+    void* hub75;  // Use an opaque pointer
     void *buf;
 } _Hub75_obj_t;

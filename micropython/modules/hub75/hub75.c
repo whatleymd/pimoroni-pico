@@ -1,4 +1,5 @@
 #include "hub75.h"
+#include "drivers/hub75/hub75.hpp"
 
 /***** Methods *****/
 MP_DEFINE_CONST_FUN_OBJ_1(Hub75___del___obj, Hub75___del__);
@@ -13,7 +14,7 @@ MP_DEFINE_CONST_FUN_OBJ_2(Hub75_set_brightness_obj, Hub75_set_brightness);
 mp_obj_t Hub75_set_brightness(mp_obj_t self_in, mp_obj_t brightness) {
     _Hub75_obj_t *self = MP_OBJ_TO_PTR(self_in);  // Use MP_OBJ_TO_PTR
     float brightness_value = mp_obj_get_float(brightness);
-    self->hub75->set_brightness(brightness_value);
+    ((pimoroni::Hub75*)self->hub75)->set_brightness(brightness_value);  // Cast to actual type
     return mp_const_none;
 }
 
