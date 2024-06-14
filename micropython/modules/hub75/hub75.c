@@ -1,6 +1,5 @@
 #include "hub75.h"
 
-
 /***** Methods *****/
 MP_DEFINE_CONST_FUN_OBJ_1(Hub75___del___obj, Hub75___del__);
 MP_DEFINE_CONST_FUN_OBJ_KW(Hub75_set_pixel_obj, 5, Hub75_set_pixel);
@@ -9,6 +8,14 @@ MP_DEFINE_CONST_FUN_OBJ_1(Hub75_start_obj, Hub75_start);
 MP_DEFINE_CONST_FUN_OBJ_1(Hub75_stop_obj, Hub75_stop);
 MP_DEFINE_CONST_FUN_OBJ_2(Hub75_update_obj, Hub75_update);
 
+// Add the set_brightness method
+STATIC mp_obj_t Hub75_set_brightness(mp_obj_t self_in, mp_obj_t brightness_in) {
+    _Hub75_obj_t *self = MP_OBJ_TO_PTR2(self_in, _Hub75_obj_t);
+    float brightness = mp_obj_get_float(brightness_in);
+    self->hub75->set_brightness(brightness);
+    return mp_const_none;
+}
+MP_DEFINE_CONST_FUN_OBJ_2(Hub75_set_brightness_obj, Hub75_set_brightness);
 
 /***** Binding of Methods *****/
 static const mp_rom_map_elem_t Hub75_locals_dict_table[] = {
@@ -18,6 +25,8 @@ static const mp_rom_map_elem_t Hub75_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR_start), MP_ROM_PTR(&Hub75_start_obj) },
     { MP_ROM_QSTR(MP_QSTR_stop), MP_ROM_PTR(&Hub75_stop_obj) },
     { MP_ROM_QSTR(MP_QSTR_update), MP_ROM_PTR(&Hub75_update_obj) },
+    // Add the set_brightness method
+    { MP_ROM_QSTR(MP_QSTR_set_brightness), MP_ROM_PTR(&Hub75_set_brightness_obj) },
 };
 
 static MP_DEFINE_CONST_DICT(Hub75_locals_dict, Hub75_locals_dict_table);

@@ -3,6 +3,10 @@
 #include <cmath>
 
 #include "hub75.hpp"
+#include "hardware/pwm.h"
+
+#define PWM_PIN 15  // Replace with the actual GPIO pin number used for PWM
+#define MAX_PWM_LEVEL 255  // Replace with the maximum PWM level for your application
 
 namespace pimoroni {
 
