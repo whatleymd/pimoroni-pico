@@ -275,4 +275,11 @@ void Hub75::update(PicoGraphics *graphics) {
         }
     }
 }
+
+void Hub75::set_brightness(float brightness) {
+    // Adjust the PWM settings based on the brightness value
+    // This is a placeholder implementation; you need to adjust it based on your hardware specifics
+    pwm_set_gpio_level(PWM_PIN, brightness * MAX_PWM_LEVEL);
+}
+
 }

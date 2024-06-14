@@ -130,6 +130,8 @@ class Hub75 {
     void FM6126A_write_register(uint16_t value, uint8_t position);
     void FM6126A_setup();
     void set_color(uint x, uint y, Pixel c);
+    void set_brightness(float brightness);
+
 
     void set_pixel(uint x, uint y, uint8_t r, uint8_t g, uint8_t b);
     void display_update();
