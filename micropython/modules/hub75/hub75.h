@@ -19,6 +19,6 @@ extern mp_obj_t Hub75_set_brightness(mp_obj_t self_in, mp_obj_t brightness_in); 
 // Definition of _Hub75_obj_t
 typedef struct _Hub75_obj_t {
     mp_obj_base_t base;
-    Hub75* hub75;
+    pimoroni::Hub75* hub75;  // Use the forward-declared class
     void *buf;
 } _Hub75_obj_t;
