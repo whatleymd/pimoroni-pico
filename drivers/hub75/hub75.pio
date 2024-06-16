@@ -26,12 +26,6 @@ pulse_loop:
     jmp x-- pulse_loop side 0x0 ; Assert OEn for x+1 cycles
 .wrap
 
-; Program for custom PWM handling
-program_custom_pwm:
-    pull block          side 0x0 ; Pull new PWM value from FIFO
-    out x, 27           side 0x0 ; Set new PWM value to x
-    jmp pulse_loop      side 0x0 ; Jump back to pulse loop with new PWM value
-
 .program hub75_row_inverted
 
 ; side-set pin 0 is LATCH
@@ -72,7 +66,7 @@ static inline void hub75_row_program_init(PIO pio, uint sm, uint offset, uint ro
 }
 
 static inline void hub75_wait_tx_stall(PIO pio, uint sm) {
-    while (!(pio_sm_get_pc(pio, sm) & (1u << PIO_CTRL_PC_LSB))) {
+    while (!pio_sm_is_tx_fifo_empty(pio, sm)) {
         tight_loop_contents();
     }
 }
