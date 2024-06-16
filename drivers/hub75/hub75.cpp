@@ -3,9 +3,6 @@
 #include <cmath>
 
 #include "hub75.hpp"
-#include "pico/stdlib.h"
-#include "hardware/pio.h"
-#include "hub75.pio.h"
 
 namespace pimoroni {
 
