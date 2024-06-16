@@ -3,13 +3,15 @@
 #include <cmath>
 
 #include "hub75.hpp"
+#include "pico/stdlib.h"
+#include "hardware/pio.h"
+#include "hub75.pio.h"
 
 namespace pimoroni {
 
 Hub75::Hub75(uint width, uint height, Pixel *buffer, PanelType panel_type, bool inverted_stb, COLOR_ORDER color_order)
- : width(width), height(height), panel_type(panel_type), inverted_stb(inverted_stb), color_order(color_order)
- {
-    // Set up allllll the GPIO
+ : width(width), height(height), panel_type(panel_type), inverted_stb(inverted_stb), color_order(color_order) {
+    // Set up all the GPIO
     gpio_init(pin_r0); gpio_set_function(pin_r0, GPIO_FUNC_SIO); gpio_set_dir(pin_r0, true); gpio_put(pin_r0, 0);
     gpio_init(pin_g0); gpio_set_function(pin_g0, GPIO_FUNC_SIO); gpio_set_dir(pin_g0, true); gpio_put(pin_g0, 0);
     gpio_init(pin_b0); gpio_set_function(pin_b0, GPIO_FUNC_SIO); gpio_set_dir(pin_b0, true); gpio_put(pin_b0, 0);
@@ -42,12 +44,18 @@ Hub75::Hub75(uint width, uint height, Pixel *buffer, PanelType panel_type, bool 
         if (width >= 128) brightness = 2;
         if (width >= 160) brightness = 1;
     }
+
+    // Initialize PIO and state machine for custom PWM
+    pio = pio0;
+    sm = 0;
+    uint offset = pio_add_program(pio, &hub75_row_program);
+    hub75_row_program_init(pio, sm, offset, ROWSEL_BASE_PIN, ROWSEL_N_PINS, pin_stb);
 }
 
 void Hub75::set_color(uint x, uint y, Pixel c) {
     int offset = 0;
-    if(x >= width || y >= height) return;
-    if(y >= height / 2) {
+    if (x >= width || y >= height) return;
+    if (y >= height / 2) {
         y -= height / 2;
         offset = (y * width + x) * 2;
         offset += 1;
@@ -58,7 +66,7 @@ void Hub75::set_color(uint x, uint y, Pixel c) {
 }
 
 void Hub75::set_pixel(uint x, uint y, uint8_t r, uint8_t g, uint8_t b) {
-    switch(color_order) {
+    switch (color_order) {
         case COLOR_ORDER::RGB:
             set_color(x, y, Pixel(r, g, b));
             break;
@@ -85,7 +93,7 @@ void Hub75::FM6126A_write_register(uint16_t value, uint8_t position) {
     gpio_put(pin_stb, !stb_polarity);
 
     uint8_t threshold = width - position;
-    for(auto i = 0u; i < width; i++) {
+    for (auto i = 0u; i < width; i++) {
         auto j = i % 16;
         bool b = value & (1 << j);
 
@@ -112,7 +120,7 @@ void Hub75::FM6126A_setup() {
 }
 
 void Hub75::start(irq_handler_t handler) {
-    if(handler) {
+    if (handler) {
         if (panel_type == PANEL_FM6126A) {
             FM6126A_setup();
         }
@@ -140,7 +148,6 @@ void Hub75::start(irq_handler_t handler) {
         channel_config_set_dreq(&config, pio_get_dreq(pio, sm_data, true));
         dma_channel_configure(dma_channel, &config, &pio->txf[sm_data], NULL, 0, false);
 
-
         // Same handler for both DMA channels
         irq_add_shared_handler(DMA_IRQ_0, handler, PICO_SHARED_IRQ_HANDLER_DEFAULT_ORDER_PRIORITY);
 
@@ -159,27 +166,25 @@ void Hub75::start(irq_handler_t handler) {
 }
 
 void Hub75::stop(irq_handler_t handler) {
-
     irq_set_enabled(DMA_IRQ_0, false);
     irq_set_enabled(pio_get_dreq(pio, sm_data, true), false);
 
-    if(dma_channel != -1 &&  dma_channel_is_claimed(dma_channel)) {
+    if (dma_channel != -1 && dma_channel_is_claimed(dma_channel)) {
         dma_channel_set_irq0_enabled(dma_channel, false);
         irq_remove_handler(DMA_IRQ_0, handler);
-        //dma_channel_wait_for_finish_blocking(dma_channel);
         dma_channel_abort(dma_channel);
         dma_channel_acknowledge_irq0(dma_channel);
         dma_channel_unclaim(dma_channel);
     }
 
-    if(pio_sm_is_claimed(pio, sm_data)) {
+    if (pio_sm_is_claimed(pio, sm_data)) {
         pio_sm_set_enabled(pio, sm_data, false);
         pio_sm_drain_tx_fifo(pio, sm_data);
         pio_remove_program(pio, &hub75_data_rgb888_program, data_prog_offs);
         pio_sm_unclaim(pio, sm_data);
     }
 
-    if(pio_sm_is_claimed(pio, sm_row)) {
+    if (pio_sm_is_claimed(pio, sm_row)) {
         pio_sm_set_enabled(pio, sm_row, false);
         pio_sm_drain_tx_fifo(pio, sm_row);
         if (inverted_stb) {
@@ -191,7 +196,6 @@ void Hub75::stop(irq_handler_t handler) {
     }
 
     // Make sure the GPIO is in a known good state
-    // since we don't know what the PIO might have done with it
     gpio_put_masked(0b111111 << pin_r0, 0);
     gpio_put_masked(0b11111 << pin_row_a, 0);
     gpio_put(pin_clk, !clk_polarity);
@@ -205,17 +209,15 @@ Hub75::~Hub75() {
 }
 
 void Hub75::clear() {
-    for(auto x = 0u; x < width; x++) {
-        for(auto y = 0u; y < height; y++) {
+    for (auto x = 0u; x < width; x++) {
+        for (auto y = 0u; y < height; y++) {
             set_pixel(x, y, 0, 0, 0);
         }
     }
 }
 
-
 void Hub75::dma_complete() {
-
-    if(dma_channel_get_irq0_status(dma_channel)) {
+    if (dma_channel_get_irq0_status(dma_channel)) {
         dma_channel_acknowledge_irq0(dma_channel);
 
         // Push out a dummy pixel for each row
@@ -233,7 +235,7 @@ void Hub75::dma_complete() {
 
         row++;
 
-        if(row == height / 2) {
+        if (row == height / 2) {
             row = 0;
             bit++;
             if (bit == BIT_DEPTH) {
@@ -248,10 +250,10 @@ void Hub75::dma_complete() {
 }
 
 void Hub75::update(PicoGraphics *graphics) {
-    if(graphics->pen_type == PicoGraphics::PEN_RGB888) {
+    if (graphics->pen_type == PicoGraphics::PEN_RGB888) {
         uint32_t *p = (uint32_t *)graphics->frame_buffer;
-        for(uint y = 0; y < height; y++) {
-            for(uint x = 0; x < width; x++) {
+        for (uint y = 0; y < height; y++) {
+            for (uint x = 0; x < width; x++) {
                 uint32_t col = *p;
                 uint8_t r = (col & 0xff0000) >> 16;
                 uint8_t g = (col & 0x00ff00) >>  8;
@@ -260,11 +262,10 @@ void Hub75::update(PicoGraphics *graphics) {
                 p++;
             }
         }
-    }
-    else if(graphics->pen_type == PicoGraphics::PEN_RGB565) {
+    } else if (graphics->pen_type == PicoGraphics::PEN_RGB565) {
         uint16_t *p = (uint16_t *)graphics->frame_buffer;
-        for(uint y = 0; y < height; y++) {
-            for(uint x = 0; x < width; x++) {
+        for (uint y = 0; y < height; y++) {
+            for (uint x = 0; x < width; x++) {
                 uint16_t col = __builtin_bswap16(*p);
                 uint8_t r = (col & 0b1111100000000000) >> 8;
                 uint8_t g = (col & 0b0000011111100000) >> 3;
@@ -275,4 +276,11 @@ void Hub75::update(PicoGraphics *graphics) {
         }
     }
 }
+
+// Method to set custom PWM value
+void Hub75::setPWM(uint32_t pwm_value) {
+    // Push new PWM value to PIO FIFO
+    pio_sm_put_blocking(pio, sm, pwm_value);
+}
+
 }
