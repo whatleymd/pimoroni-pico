@@ -28,9 +28,9 @@ pulse_loop:
 
 ; Program for custom PWM handling
 program_custom_pwm:
-    pull block          ; Pull new PWM value from FIFO
-    out x, 27           ; Set new PWM value to x
-    jmp pulse_loop      ; Jump back to pulse loop with new PWM value
+    pull block          side 0x0 ; Pull new PWM value from FIFO
+    out x, 27           side 0x0 ; Set new PWM value to x
+    jmp pulse_loop      side 0x0 ; Jump back to pulse loop with new PWM value
 
 .program hub75_row_inverted
 
